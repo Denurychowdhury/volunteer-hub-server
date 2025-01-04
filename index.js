@@ -3,19 +3,38 @@ const express = require('express');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 const cors = require('cors');
+const jwt = require('jsonwebtoken')
+const cookieParser=require('cookie-parser')
 const app = express();
 
 
 
 const port = process.env.PORT || 5000;
 
-app.use(cors())
+app.use(cors({
+  origin: ['http://localhost:5173'],
+  credentials:true
+}))
 app.use(express.json())
-
+app.use(cookieParser())
 //DB_USER
 // volunteer - hub
 //DB_PASS==oVSp3uD2KQj95e9T
 
+const verifyToken = (req, res, next) => {
+  const token = req.cookies?.token;
+  console.log('tokeninside the verifyToken', token)
+  if (!token) {
+    return res.status(401).send({message:'unauthorized access'})
+  }
+  // verify the token
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+    if (err) {
+      return res.status(401).send({message:'Unauthorized access'})
+    }
+    next()
+  })
+}
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.wk99c.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 console.log(uri);
@@ -40,26 +59,34 @@ async function run() {
 
 
       const volunteerCollection = client.db('volunteerDb').collection('volunteers');
-      const requestCollection = client.db('volunteerDb').collection('requests');
+    const requestCollection = client.db('volunteerDb').collection('requests');
+    
+    // token related apis
+    app.post('/jwt', (req, res) => {
+      const user = req.body;
+      const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
+        expiresIn:'5h'
+      })
+      res.cookie('token', token, {
+        httpOnly: true,
+        secure:false
+      })
+      .send({success:true})
+    })
+    app.post('/logout', (req, res) => {
+      res.clearCookie('token', {
+        httpOnly: true,
+        secure:false
+      })
+      .send({success:true})
+    })
 
       app.post('/addvolun', async (req, res)=> {
           const volunteer = req.body;
           const result = await volunteerCollection.insertOne(volunteer)
           res.send(result)
       })
-    
-    //  app.get('/jobs', async (req, res) => {
-    //         const email = req.query.email;
-    //         let query = {};
-    //         if (email) {
-    //             query = { hr_email: email }
-    //         }
-    //         // const { search } = req.query;
-    //         // const cursor = jobsCollection.find({title:{$regex:search,$options:'i'}});
-    //         const cursor = jobsCollection.find(query || {title:{$regex:search,$options:'i'}});
-    //         const result = await cursor.toArray();
-    //         res.send(result);
-    //     });
+  
     // add request
     app.post('/addrequest', async (req, res)=> {
           const volunteer = req.body;
@@ -111,9 +138,11 @@ async function run() {
       const result = await volunteerCollection.findOne(query)
       res.send(result)
       })
-     app.get('/volunteers/myadd/:email', async (req, res) => {
+     app.get('/volunteers/myadd/:email',verifyToken, async (req, res) => {
       const email = req.params.email;
-      const query={email:email}
+       const query = { email: email }
+       
+       console.log(req.cookies?.token)
       const wishes = volunteerCollection.find(query);
       console.log(wishes);
       const result = await wishes.toArray()
