@@ -12,7 +12,7 @@ const app = express();
 const port = process.env.PORT || 5000;
 
 app.use(cors({
-  origin: ['http://localhost:5173'],
+  origin: ['http://localhost:5173','https://volunteer-hub-8bc94.web.app'],
   credentials:true
 }))
 app.use(express.json())
@@ -68,15 +68,17 @@ async function run() {
         expiresIn:'5h'
       })
       res.cookie('token', token, {
-        httpOnly: true,
-        secure:false
+       httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
       })
       .send({success:true})
     })
     app.post('/logout', (req, res) => {
       res.clearCookie('token', {
         httpOnly: true,
-        secure:false
+        secure: process.env.NODE_ENV === "production",
+       sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
       })
       .send({success:true})
     })
@@ -148,7 +150,7 @@ async function run() {
       const result = await wishes.toArray()
         res.send(result)
      })
-    app.get('/volunteers/myrequest/:email', async (req, res) => {
+    app.get('/volunteers/myrequest/:email',verifyToken, async (req, res) => {
       const email = req.params.email;
       const query={volunteeremail:email}
       const wishes = requestCollection.find(query);
