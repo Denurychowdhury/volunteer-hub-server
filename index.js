@@ -17,9 +17,7 @@ app.use(cors({
 }))
 app.use(express.json())
 app.use(cookieParser())
-//DB_USER
-// volunteer - hub
-//DB_PASS==oVSp3uD2KQj95e9T
+
 
 const verifyToken = (req, res, next) => {
   const token = req.cookies?.token;
