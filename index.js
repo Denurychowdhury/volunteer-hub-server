@@ -72,6 +72,8 @@ async function run() {
       })
       .send({success:true})
     })
+
+    // logout configuration for token
     app.post('/logout', (req, res) => {
       res.clearCookie('token', {
         httpOnly: true,
@@ -80,7 +82,7 @@ async function run() {
       })
       .send({success:true})
     })
-
+  //add volunteer to mongodb
       app.post('/addvolun', async (req, res)=> {
           const volunteer = req.body;
           const result = await volunteerCollection.insertOne(volunteer)
@@ -94,7 +96,7 @@ async function run() {
           res.send(result)
     })
     
-
+     //udpate
     app.patch('/updatenumber/:id', async (req, res) => {
         const id = req.params.id;
    
@@ -110,6 +112,8 @@ async function run() {
       const result = await volunteerCollection.updateOne(query,updateReview)
       res.send(result)
     })
+
+    // all volunteer api
       app.get('/volunteers', async (req, res) => {
         // const volunteer = volunteerCollection.find();
         const { search } = req.query;
@@ -129,7 +133,8 @@ async function run() {
         const result = await volunteer.toArray();
         res.send(result)
       })
-
+    
+    // id wised volunteer
       app.get('/volunteers/:id', async (req, res) => {
       const id = req.params.id;
    
@@ -138,6 +143,8 @@ async function run() {
       const result = await volunteerCollection.findOne(query)
       res.send(result)
       })
+    
+    // add api for a person who add a volunteer post
      app.get('/volunteers/myadd/:email',verifyToken, async (req, res) => {
       const email = req.params.email;
        const query = { email: email }
@@ -148,6 +155,8 @@ async function run() {
       const result = await wishes.toArray()
         res.send(result)
      })
+    
+    // an users request to be a volunteer
     app.get('/volunteers/myrequest/:email',verifyToken, async (req, res) => {
       const email = req.params.email;
       const query={volunteeremail:email}
