@@ -202,7 +202,9 @@ async function run() {
 
       const result = await volunteerCollection.deleteOne(query);
       res.send(result)
-      })
+    })
+    
+    // delete api
     app.delete('/requests/delete/:id', async (req, res) => {
       const id = req.params.id;
    
